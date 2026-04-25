@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FOOD INVENTORY — Stock Control</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous"/>
+  <style>
+    :root {
+      --primary:   #ABC270;
+      --secondary: #FDA769;
+      --accent:    #FEC868;
+      --dark:      #473C33;
+      --light:     #FAFAF8;
+      --border:    #F0E5D8;
+      --muted:     #8B7B6F;
+      --danger:    #E74C3C;
+      --success:   #ABC270;
+      --radius:    16px;
+      --shadow:    0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .auth-container {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .auth-left {
+      background: linear-gradient(135deg, var(--primary) 0%, #95b857 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4rem 3rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .auth-brand {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      position: relative;
+    }
+
+    .auth-headline {
+      font-family: 'Poppins', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      position: relative;
+    }
+
+    .auth-tagline {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .auth-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      background: var(--light);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-card h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.9rem 1.1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--dark);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(171, 194, 112, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-error { background: #fff5f5; border: 1.5px solid var(--danger); color: var(--danger); }
+    .alert-success { background: #f0faf0; border: 1.5px solid var(--success); color: var(--success); }
+
+    .btn {
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--secondary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(253, 167, 105, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(253, 167, 105, 0.4);
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .auth-switch a {
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .app-header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .app-logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    .app-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .nav-btn {
+      padding: 0.6rem 1.2rem;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .app-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .search-input {
+      padding: 0.6rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      width: 200px;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-logout {
+      padding: 0.6rem 1.2rem;
+      background: transparent;
+      border: 1.5px solid var(--danger);
+      border-radius: 8px;
+      color: var(--danger);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .btn-logout:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #95b857 100%);
+      color: white;
+      padding: 3rem 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .hero-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 2rem;
+    }
+
+    .hero-text h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-meta {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .stat {
+      text-align: right;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 3rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .products-grid {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: all 0.2s;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
+    }
+
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1.5rem;
+    }
+
+    .product-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .category-badge {
+      background: var(--accent);
+      color: var(--dark);
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .product-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail {
+      text-align: center;
+    }
+
+    .detail-value {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .action-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #f9faf8;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .action-btn.danger {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .action-btn.danger:hover {
+      border-color: var(--danger);
+      color: white;
+      background: var(--danger);
+    }
+
+    .action-btn.info {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .action-btn.info:hover {
+      border-color: var(--primary);
+      color: white;
+      background: var(--primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-text {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-content {
+      background: white;
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 500px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .modal-close {
+      background: var(--border);
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .category-pills {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+      margin: 1.5rem 0;
+    }
+
+    .pill {
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .pill.selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .filter-bar-pills {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-pill {
+      padding: 10px 20px;
+      border: 2px solid var(--primary);
+      border-radius: 50px;
+      font-size: 0.95rem;
+      color: var(--dark);
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 18px;
+      padding-right: 40px;
+      min-width: 160px;
+      text-align: left;
+    }
+
+    .filter-pill:hover {
+      background-color: rgba(171, 194, 112, 0.1);
+      box-shadow: 0 4px 12px rgba(171, 194, 112, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .filter-pill:focus {
+      outline: none;
+      background-color: rgba(171, 194, 112, 0.15);
+      box-shadow: 0 0 0 3px rgba(171, 194, 112, 0.2);
+    }
+
+    .filter-pill:active {
+      transform: translateY(0);
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+      color: var(--dark);
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 2.5rem;
+      right: 2.5rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: var(--dark);
+      border: none;
+      font-size: 1.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(254, 200, 104, 0.4);
+      transition: all 0.2s;
+      z-index: 150;
+    }
+
+    .fab:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(254, 200, 104, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      .auth-container { grid-template-columns: 1fr; }
+      .auth-left { display: none; }
+      .hero-content { flex-direction: column; }
+      .hero-stats { flex-direction: column; gap: 1.5rem; }
+      .product-details { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; padding: 1.5rem 0; }
+      .detail-value { font-size: 1.5rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .app-nav { flex-direction: column; }
+      .search-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginPage" class="page active">
+  <div class="auth-container">
+    <div class="auth-left">
+      <div>
+        <div class="auth-brand">■ FOOD INVENTORY</div>
+        <div class="auth-headline">Stock Control Made Simple</div>
+      </div>
+      <div class="auth-tagline">Manage your inventory with confidence and clarity</div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <h2>Welcome back</h2>
+        <p class="auth-subtitle">Sign in to your account</p>
+        <div id="loginAlert" class="alert alert-error"></div>
+        <div id="signupSuccess" class="alert alert-success"></div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter your username"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password"/>
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()">Sign In</button>
+
+        <div class="auth-switch">
+          No account? <a onclick="goTo('signup')">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="signupPage" class="page">
+  <div class="auth-container">
+    <div class="auth-left">
+      <div>
+        <div class="auth-brand">■ FOOD INVENTORY</div>
+        <div class="auth-headline">Join Now</div>
+      </div>
+      <div class="auth-tagline">Start managing your inventory today</div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <h2>Create account</h2>
+        <p class="auth-subtitle">Fill in your details below</p>
+        <div id="signupAlert" class="alert alert-error"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="su_fname" placeholder="Juan"/>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="su_lname" placeholder="Dela Cruz"/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Birthdate</label>
+            <input type="date" id="su_bdate"/>
+          </div>
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="su_gender">
+              <option value="">Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="su_gmail" placeholder="you@example.com"/>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="su_contact" placeholder="09123456789"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="su_username" placeholder="your_username"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="su_password" placeholder="Min. 8 characters"/>
+          </div>
+          <div class="form-group">
+            <label>Confirm</label>
+            <input type="password" id="su_conf" placeholder="Repeat password"/>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="handleSignup()">Create Account</button>
+
+        <div class="auth-switch">
+          Have an account? <a onclick="goTo('login')">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appPage" class="page">
+  <header class="app-header">
+    <div class="app-logo">■ INVENTORY</div>
+    <nav class="app-nav">
+      <button class="nav-btn active" id="navHome" onclick="switchTab('home')">Home</button>
+      <button class="nav-btn" id="navInventory" onclick="switchTab('inventory')">Inventory</button>
+      <button class="nav-btn" id="navEdit" onclick="switchTab('edit')">Manage</button>
+      <button class="nav-btn" id="navMovements" onclick="switchTab('movements')">Stock Movements</button>
+    </nav>
+    <div class="app-actions">
+      <input class="search-input" type="search" id="searchBox" placeholder="Search products..."/>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 id="heroTitle">Stock Control</h1>
+        <p class="hero-meta" id="heroMeta">Welcome back!</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-value" id="statProducts">0</div>
+          <div class="stat-label">Products</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statQty">0</div>
+          <div class="stat-label">Total Qty</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statValue">₱0</div>
+          <div class="stat-label">Total Value</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="app-container">
+    <div id="tabHome" class="tab-content active">
+      <div id="lowStockAlert" style="display:none; margin-bottom: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+        <div style="color: #856404; font-weight: bold; margin-bottom: 10px;">⚠️ Low Stock Alert</div>
+        <div id="lowStockList" style="color: #856404;"></div>
+      </div>
+      <div class="products-grid" id="homeGrid"></div>
+      <button class="fab" onclick="openModal()">+</button>
+    </div>
+
+    <div id="tabInventory" class="tab-content">
+      <div class="filter-bar-pills">
+        <select id="sortBy" onchange="applyFiltersAndSort()" class="filter-pill">
+          <option value="name">Product Name</option>
+          <option value="category">Category</option>
+          <option value="price">Price (Low to High)</option>
+          <option value="price-desc">Price (High to Low)</option>
+          <option value="qty">Quantity (Low to High)</option>
+          <option value="qty-desc">Quantity (High to Low)</option>
+          <option value="value">Total Value</option>
+        </select>
+
+        <select id="filterCategory" onchange="applyFiltersAndSort()" class="filter-pill">
+          <option value="">Category</option>
+          <option value="Food">Food</option>
+          <option value="Drinks">Drinks</option>
+          <option value="Snacks">Snacks</option>
+          <option value="Fruits">Fruits</option>
+          <option value="Vegetables">Vegetables</option>
+          <option value="Meat">Meat</option>
+          <option value="Dairy">Dairy</option>
+          <option value="Bakery">Bakery</option>
+          <option value="Frozen">Frozen</option>
+          <option value="Seafood">Seafood</option>
+        </select>
+      </div>
+
+      <div id="inventoryLowStockAlert" style="display:none; margin-bottom: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+        <div style="color: #856404; font-weight: bold; margin-bottom: 10px;">⚠️ Low Stock Alert</div>
+        <div id="inventoryLowStockList" style="color: #856404;"></div>
+      </div>
+
+      <div class="products-grid" id="inventoryGrid"></div>
+    </div>
+
+    <div id="tabEdit" class="tab-content">
+      <div class="products-grid" id="editGrid"></div>
+    </div>
+
+    <div id="tabMovements" class="tab-content">
+      <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="openMovementModal()">+ Record Stock Movement</button>
+      </div>
+      <div id="movementsTable" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Product</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Type</th>
+              <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Qty Change</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Reference</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Notes</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Date</th>
+            </tr>
+          </thead>
+          <tbody id="movementsBody">
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No stock movements recorded</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="movementModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Stock Movement</h3>
+        <button class="modal-close" onclick="closeMovementModal()">✕</button>
+      </div>
+
+      <div id="movementAlert" class="alert alert-error"></div>
+
+      <div class="form-group">
+        <label>Product</label>
+        <select id="movementProduct">
+          <option value="">Select Product</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Movement Type</label>
+          <select id="movementType">
+            <option value="purchase">Purchase (In)</option>
+            <option value="sale">Sale (Out)</option>
+            <option value="adjustment">Adjustment</option>
+            <option value="damage">Damage/Waste</option>
+            <option value="return">Return</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="movementQty" placeholder="Enter quantity change"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Reference # (PO, Invoice, etc)</label>
+          <input type="text" id="movementRef" placeholder="e.g., PO-001, INV-123"/>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input type="text" id="movementNotes" placeholder="Additional notes"/>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="handleRecordMovement()">Record Movement</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editPriceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Price</h3>
+        <button class="modal-close" onclick="closeEditPriceModal()">✕</button>
+      </div>
+
+      <div id="priceAlert" class="alert alert-error"></div>
+
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="editPriceProductName" readonly style="background: #f5f5f5; cursor: not-allowed;"/>
+      </div>
+
+      <div class="form-group">
+        <label>Current Price (₱)</label>
+        <input type="number" id="editPriceCurrentPrice" readonly style="background: #f5f5f5; cursor: not-allowed;" step="0.01"/>
+      </div>
+
+      <div class="form-group">
+        <label>New Price (₱)</label>
+        <input type="number" id="editPriceNewPrice" placeholder="Enter new price" step="0.01" min="0"/>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="handleUpdatePrice()">Update Price</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Product</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div id="modalAlert" class="alert alert-error"></div>
+
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="newName" placeholder="e.g. Mineral Water"/>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="newQty" min="1" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>Price (₱)</label>
+          <input type="number" id="newPrice" step="0.01" min="0" placeholder="0.00"/>
+        </div>
+      </div>
+
+      <label class="form-label">Category</label>
+      <div class="category-pills" id="catPills"></div>
+
+      <button class="btn btn-primary" style="margin-top:2rem;" onclick="handleAddProduct()">Add Product</button>
+    </div>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
