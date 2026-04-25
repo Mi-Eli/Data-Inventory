@@ -1,11 +1,12 @@
 # Project Title:
 Food Inventory Management System
 # Group Members:
-Charlie - Frontend: HTML, Bootstrap, CSS, JavaScript
-Aldemth Luci - Backend: Database, MySQL,
-El John Ricamara - Backend: Custom PHP, API, JSON PA
-Renz Ogbac - Integration: PHP, (PDO), JavaScript, Fetch
-Feliciano Opis - Documentation, Github
+
+- Charlie - Frontend: HTML, Bootstrap, CSS, JavaScript
+- Aldemth Luci - Backend: Database, MySQL,
+- El John Ricamara - Backend: Custom PHP, API, JSON PA
+- Renz Ogbac - Integration: PHP, (PDO), JavaScript, Fetch
+- Feliciano Opis - Documentation, Github
 # Project Descrition
 - 1.1 Brief Explation of System Purpose
 The Inventory Management System is designed to streamline and automate the process of tracking, managing, and controlling inventory items within a business or organization. It provides an efficient way to monitor stock levels, manage product details, record transactions, and generate reports, thereby reducing manual errors and enhancing overall operational productivity.
