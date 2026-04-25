@@ -217,7 +217,7 @@ function handleUpdateProduct() {
     $data = json_decode(file_get_contents('php://input'), true);
 
     $id     = (int)($data['id'] ?? 0);
-    $action = trim($data['action'] ?? '');
+    $action = trim($data['updateAction'] ?? '');
     $value  = $data['value'] ?? null;
 
     if ($id <= 0 || !$action) {
