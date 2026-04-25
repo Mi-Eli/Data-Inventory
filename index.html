@@ -999,7 +999,574 @@
 
 </div>
 
+<script>
+const API_BASE = 'api.php';
+const CATEGORIES = ['Food','Drinks','Snacks','Fruits','Vegetables','Meat','Dairy','Bakery','Frozen','Seafood'];
 
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(page + 'Page').classList.add('active');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab' + capitalize(tab)).classList.add('active');
+
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav' + capitalize(tab)).classList.add('active');
+
+  const titles = {
+    home: 'Stock Control',
+    inventory: 'Your Inventory',
+    edit: 'Manage Products'
+  };
+  document.getElementById('heroTitle').textContent = titles[tab];
+  renderProducts();
+}
+
+function showAlert(id, msg, isError = true) {
+  const el = document.getElementById(id);
+  if (msg.includes('\n')) {
+    const errors = msg.split('\n').filter(e => e.trim());
+    el.innerHTML = errors.map(e => '• ' + e).join('<br>');
+  } else {
+    el.textContent = msg;
+  }
+  el.className = 'alert show ' + (isError ? 'alert-error' : 'alert-success');
+}
+
+function hideAlert(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+async function handleLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!username || !password) {
+    showAlert('loginAlert', 'Please fill in all fields');
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'login',
+        username,
+        password
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      initApp();
+      goTo('app');
+    } else {
+      let errorMsg = data.message || 'Login failed';
+      if (data.data?.errors && Array.isArray(data.data.errors)) {
+        errorMsg = data.data.errors.join('\n');
+      }
+      showAlert('loginAlert', errorMsg);
+    }
+  } catch(e) {
+    showAlert('loginAlert', 'Network error');
+    console.error(e);
+  }
+}
+
+async function handleSignup() {
+  const fname = document.getElementById('su_fname').value.trim();
+  const lname = document.getElementById('su_lname').value.trim();
+  const bdate = document.getElementById('su_bdate').value;
+  const gender = document.getElementById('su_gender').value;
+  const gmail = document.getElementById('su_gmail').value.trim();
+  const contact = document.getElementById('su_contact').value.trim();
+  const username = document.getElementById('su_username').value.trim();
+  const password = document.getElementById('su_password').value;
+  const conf = document.getElementById('su_conf').value;
+
+  if (!fname||!lname||!bdate||!gender||!gmail||!contact||!username||!password||!conf) {
+    showAlert('signupAlert', 'Please fill in all fields');
+    return;
+  }
+  if (password !== conf) {
+    showAlert('signupAlert', 'Passwords do not match');
+    return;
+  }
+  if (password.length < 8) {
+    showAlert('signupAlert', 'Password must be at least 8 characters');
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'signup',
+        fname,
+        lname,
+        bdate,
+        gender,
+        gmail,
+        contact,
+        username,
+        password
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('su_fname').value = '';
+      document.getElementById('su_lname').value = '';
+      document.getElementById('su_bdate').value = '';
+      document.getElementById('su_gender').value = '';
+      document.getElementById('su_gmail').value = '';
+      document.getElementById('su_contact').value = '';
+      document.getElementById('su_username').value = '';
+      document.getElementById('su_password').value = '';
+      document.getElementById('su_conf').value = '';
+      goTo('login');
+      showAlert('signupSuccess', 'Account created! Please log in.', false);
+    } else {
+      let errorMsg = data.message || 'Signup failed';
+      if (data.data?.errors && Array.isArray(data.data.errors)) {
+        errorMsg = data.data.errors.join('\n');
+      }
+      showAlert('signupAlert', errorMsg);
+    }
+  } catch(e) {
+    showAlert('signupAlert', 'Network error');
+    console.error(e);
+  }
+}
+
+async function handleLogout() {
+  try {
+    await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' })
+    });
+    goTo('login');
+  } catch(e) {
+    goTo('login');
+  }
+}
+
+function openMovementModal() {
+  document.getElementById('movementModal').style.display = 'flex';
+  loadProductsForMovement();
+}
+
+function closeMovementModal() {
+  document.getElementById('movementModal').style.display = 'none';
+  document.getElementById('movementAlert').className = 'alert alert-error';
+}
+
+async function loadProductsForMovement() {
+  const products = await loadProducts();
+  const select = document.getElementById('movementProduct');
+  select.innerHTML = '<option value="">Select Product</option>';
+  products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + ' (Current: ' + p.qty + ')';
+    select.appendChild(opt);
+  });
+}
+
+async function handleRecordMovement() {
+  const productId = document.getElementById('movementProduct').value;
+  const movementType = document.getElementById('movementType').value;
+  const qty = parseInt(document.getElementById('movementQty').value);
+  const refNum = document.getElementById('movementRef').value.trim();
+  const notes = document.getElementById('movementNotes').value.trim();
+
+  if (!productId || !qty) {
+    showAlert('movementAlert', 'Product and quantity are required');
+    return;
+  }
+
+  const quantityChange = movementType === 'purchase' || movementType === 'return' ? qty : -qty;
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_movement',
+        product_id: parseInt(productId),
+        movement_type: movementType,
+        quantity_change: quantityChange,
+        reference_num: refNum,
+        notes: notes
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeMovementModal();
+      document.getElementById('movementProduct').value = '';
+      document.getElementById('movementQty').value = '';
+      document.getElementById('movementRef').value = '';
+      document.getElementById('movementNotes').value = '';
+      renderProducts();
+      loadStockMovements();
+      showAlert('movementAlert', 'Stock movement recorded successfully!', false);
+    } else {
+      showAlert('movementAlert', data.message || 'Failed to record movement');
+    }
+  } catch(e) {
+    showAlert('movementAlert', 'Network error');
+    console.error(e);
+  }
+}
+
+async function loadStockMovements() {
+  try {
+    const res = await fetch(API_BASE + '?action=list_movements');
+    const data = await res.json();
+
+    if (data.success && data.data?.movements) {
+      renderStockMovements(data.data.movements);
+    }
+  } catch(e) {
+    console.error('Error loading movements:', e);
+  }
+}
+
+function renderStockMovements(movements) {
+  const tbody = document.getElementById('movementsBody');
+
+  if (!movements.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No stock movements recorded</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = movements.map(m => `
+    <tr style="border-bottom: 1px solid #eee;">
+      <td style="padding: 10px; border: 1px solid #eee;">${esc(m.product_name)}</td>
+      <td style="padding: 10px; border: 1px solid #eee;"><span style="background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">${m.movement_type}</span></td>
+      <td style="padding: 10px; border: 1px solid #eee; text-align: center; font-weight: bold; color: ${m.quantity_change > 0 ? '#28a745' : '#dc3545'};">${m.quantity_change > 0 ? '+' : ''}${m.quantity_change}</td>
+      <td style="padding: 10px; border: 1px solid #eee;">${m.reference_num || '-'}</td>
+      <td style="padding: 10px; border: 1px solid #eee;">${m.notes || '-'}</td>
+      <td style="padding: 10px; border: 1px solid #eee; font-size: 0.85rem; color: #666;">${new Date(m.created_at).toLocaleDateString()}</td>
+    </tr>
+  `).join('');
+}
+
+function initApp() {
+  const now = new Date();
+  const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+  document.getElementById('heroMeta').textContent = 'Today: ' + now.toLocaleDateString('en-US', opts);
+
+  const pillWrap = document.getElementById('catPills');
+  pillWrap.innerHTML = '';
+  CATEGORIES.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'pill';
+    btn.textContent = c;
+    btn.onclick = () => {
+      document.querySelectorAll('#catPills .pill').forEach(p => p.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    pillWrap.appendChild(btn);
+  });
+
+  renderProducts();
+  loadStockMovements();
+}
+
+async function loadProducts() {
+  try {
+    const res = await fetch(API_BASE + '?action=list_products');
+    const data = await res.json();
+    return data.success ? (data.data?.products || []) : [];
+  } catch(e) {
+    console.error('Error loading:', e);
+    return [];
+  }
+}
+
+async function renderProducts() {
+  const products = await loadProducts();
+
+  const totalItems = products.length;
+  const totalQty = products.reduce((s,p) => s + (p.qty || 0), 0);
+  const totalValue = products.reduce((s,p) => s + (p.qty || 0) * (p.price || 0), 0);
+
+  document.getElementById('statProducts').textContent = totalItems;
+  document.getElementById('statQty').textContent = formatInt(totalQty);
+  document.getElementById('statValue').textContent = formatPrice(totalValue);
+
+  showLowStockAlerts('home', products);
+  renderGrid('home', products, false);
+
+  showLowStockAlerts('inventory', products);
+  renderGrid('inventory', products, false);
+
+  renderGrid('edit', products, true);
+}
+
+function showLowStockAlerts(tab, products) {
+  const lowStockItems = products.filter(p => p.qty < 5);
+  const alertId = tab === 'home' ? 'lowStockAlert' : 'inventoryLowStockAlert';
+  const listId = tab === 'home' ? 'lowStockList' : 'inventoryLowStockList';
+
+  const alertEl = document.getElementById(alertId);
+  const listEl = document.getElementById(listId);
+
+  if (lowStockItems.length === 0) {
+    alertEl.style.display = 'none';
+    return;
+  }
+
+  alertEl.style.display = 'block';
+  listEl.innerHTML = lowStockItems.map(p =>
+    `• ${esc(p.name)} (${p.qty} remaining)`
+  ).join('<br>');
+}
+
+async function applyFiltersAndSort() {
+  const products = await loadProducts();
+
+  const category = document.getElementById('filterCategory')?.value || '';
+  const sortBy = document.getElementById('sortBy')?.value || 'name';
+
+  let filtered = products;
+
+  if (category) {
+    filtered = filtered.filter(p => p.category === category);
+  }
+
+  let sorted = [...filtered];
+
+  switch(sortBy) {
+    case 'name':
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'category':
+      sorted.sort((a, b) => a.category.localeCompare(b.category));
+      break;
+    case 'price':
+      sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+      break;
+    case 'price-desc':
+      sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+      break;
+    case 'qty':
+      sorted.sort((a, b) => (a.qty || 0) - (b.qty || 0));
+      break;
+    case 'qty-desc':
+      sorted.sort((a, b) => (b.qty || 0) - (a.qty || 0));
+      break;
+    case 'value':
+      sorted.sort((a, b) => ((b.qty || 0) * (b.price || 0)) - ((a.qty || 0) * (a.price || 0)));
+      break;
+  }
+
+  showLowStockAlerts('inventory', sorted);
+  renderGrid('inventory', sorted, false);
+}
+
+function renderGrid(tab, products, isEdit) {
+  const gridId = tab + 'Grid';
+  const grid = document.getElementById(gridId);
+
+  if (!products.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No products yet</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-header">
+        <div>
+          <div class="product-title">${esc(p.name)}</div>
+          <span class="category-badge">${esc(p.category)}</span>
+        </div>
+      </div>
+      <div class="product-details">
+        <div class="detail">
+          <div class="detail-value">${p.qty || 0}</div>
+          <div class="detail-label">Qty</div>
+        </div>
+        <div class="detail">
+          <div class="detail-value">${formatPrice(p.price || 0)}</div>
+          <div class="detail-label">Price</div>
+        </div>
+        <div class="detail">
+          <div class="detail-value">${formatPrice((p.qty || 0) * (p.price || 0))}</div>
+          <div class="detail-label">Total</div>
+        </div>
+      </div>
+      ${isEdit ? `
+      <div class="product-actions">
+        <button class="action-btn" onclick="handleQty(${p.id},1)">+</button>
+        <button class="action-btn" onclick="handleQty(${p.id},-1)">−</button>
+        <button class="action-btn info" onclick="openEditPriceModal(${p.id},'${esc(p.name).replace(/'/g,"\\'")}',${p.price})">₱</button>
+        <button class="action-btn danger" onclick="handleDelete(${p.id},'${esc(p.name).replace(/'/g,"\\'")}')">✕</button>
+      </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function handleAddProduct() {
+  const name = document.getElementById('newName').value.trim();
+  const qty = parseInt(document.getElementById('newQty').value, 10);
+  const price = parseFloat(document.getElementById('newPrice').value);
+  const cat = document.querySelector('#catPills .pill.selected')?.textContent || '';
+
+  if (!name || !qty || qty < 1 || isNaN(price) || price < 0 || !cat) {
+    showAlert('modalAlert', 'Please fill in all fields correctly');
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_product',
+        name,
+        category: cat,
+        qty,
+        price
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal();
+      document.getElementById('newName').value = '';
+      document.getElementById('newQty').value = '';
+      document.getElementById('newPrice').value = '';
+      document.querySelectorAll('#catPills .pill').forEach(p => p.classList.remove('selected'));
+      renderProducts();
+    } else {
+      showAlert('modalAlert', data.message || 'Add failed');
+    }
+  } catch(e) {
+    showAlert('modalAlert', 'Network error');
+    console.error(e);
+  }
+}
+
+async function handleQty(id, delta) {
+  try {
+    const action = delta > 0 ? 'increase' : 'decrease';
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_product',
+        id,
+        action: action
+      })
+    });
+    const data = await res.json();
+    if (data.success) renderProducts();
+  } catch(e) { alert('Error'); console.error(e); }
+}
+
+async function handleDelete(id, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete_product',
+        id
+      })
+    });
+    const data = await res.json();
+    if (data.success) renderProducts();
+  } catch(e) { alert('Error'); console.error(e); }
+}
+
+function openEditPriceModal(id, name, currentPrice) {
+  document.getElementById('editPriceModal').style.display = 'flex';
+  document.getElementById('editPriceProductName').value = name;
+  document.getElementById('editPriceCurrentPrice').value = currentPrice;
+  document.getElementById('editPriceNewPrice').value = '';
+  document.getElementById('editPriceNewPrice').dataset.productId = id;
+  document.getElementById('priceAlert').className = 'alert alert-error';
+  document.getElementById('priceAlert').textContent = '';
+}
+
+function closeEditPriceModal() {
+  document.getElementById('editPriceModal').style.display = 'none';
+}
+
+async function handleUpdatePrice() {
+  const newPrice = parseFloat(document.getElementById('editPriceNewPrice').value);
+  const productId = parseInt(document.getElementById('editPriceNewPrice').dataset.productId);
+
+  if (isNaN(newPrice) || newPrice < 0) {
+    showAlert('priceAlert', 'Please enter a valid price');
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_product',
+        id: productId,
+        action: 'price',
+        value: newPrice
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeEditPriceModal();
+      renderProducts();
+      showAlert('priceAlert', 'Price updated successfully!', false);
+    } else {
+      showAlert('priceAlert', data.message || 'Failed to update price');
+    }
+  } catch(e) {
+    showAlert('priceAlert', 'Network error');
+    console.error(e);
+  }
+}
+
+function openModal() {
+  document.getElementById('addModal').classList.add('open');
+  hideAlert('modalAlert');
+}
+
+function closeModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+document.getElementById('addModal').addEventListener('click', e => {
+  if (e.target.id === 'addModal') closeModal();
+});
+
+document.getElementById('searchBox').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.product-card').forEach(card => {
+    const matches = card.textContent.toLowerCase().includes(q);
+    card.style.display = matches ? '' : 'none';
+  });
+});
+
+function capitalize(s) { return s[0].toUpperCase() + s.slice(1); }
+function formatPrice(n) { return '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function formatInt(n) { return Number(n).toLocaleString('en-PH'); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+goTo('login');
+</script>
 
 </body>
 </html>
