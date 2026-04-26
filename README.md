@@ -2,10 +2,10 @@
 Food Inventory Management System
 # Group Members:
 
-- Charlie - Frontend: HTML, Bootstrap, CSS, JavaScript
+- Charlie - Frontend: HTML, Bootstrap, CSS
 - Aldemth Luci - Backend: Database, MySQL,
 - El John Ricamara - Backend: Custom PHP, API, JSON PA
-- Renz Ogbac - Integration: PHP, (PDO), JavaScript, Fetch
+- Renz Ogbac - Integration: JavaScript Fetch, PHP (PDO)
 - Feliciano Opis - Documentation, Github
 # Project Descrition
 - 1.1 Brief Explation of System Purpose
